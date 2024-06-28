@@ -22,6 +22,7 @@ import com.redhat.devtools.gateway.view.InformationDialog
 import com.redhat.devtools.gateway.view.LoaderDialog
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenUIManager
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
@@ -126,15 +127,37 @@ class DevSpacesRemoteServerConnectionStepView(private var devSpacesContext: DevS
     private fun doRefreshAllDevWorkspaces() {
         val devWorkspaces = ArrayList<DevWorkspace>()
 
+        // println("Print out projects:")
+        // val projects = Projects(devSpacesContext.client).list()
+        // projects.forEach { project ->
+        //     (Utils.getValue(project, arrayOf("metadata", "name")) as String)
+        //         .also {
+        //             val devWorkspacesInProject = DevWorkspaces(devSpacesContext.client).list(it)
+        //             println("Project: $it")
+        //             devWorkspacesInProject.forEach { dw ->
+        //                 println("DevWorkspace: ${dw.metadata.name}")
+        //             }
+        //         }
+        // }
+
         Projects(devSpacesContext.client)
             .list()
             .onEach { project ->
                 (Utils.getValue(project, arrayOf("metadata", "name")) as String)
                     .also {
-                        devWorkspaces.addAll(DevWorkspaces(devSpacesContext.client).list(it))
+                        println("Getting devworkspaces in project: $it")
+                        println("Breakpoint 1.1")
+                        val devWorkspacesObject = DevWorkspaces(devSpacesContext.client)
+                        println("Breakpoint 1.2")
+                        val devWorkspacesInProject = devWorkspacesObject.list(it)
+                        println("Breakpoint 1.3")
+                        devWorkspaces.addAll(devWorkspacesInProject)
+                        println("Breakpoint 1.4")
+                        println("Found devworkspaces: " + devWorkspaces.size)
+                        
                     }
             }
-
+        
 
         val selectedIndex = listDevWorkspaces.selectedIndex
 
@@ -187,8 +210,9 @@ class DevSpacesRemoteServerConnectionStepView(private var devSpacesContext: DevS
             .get(listDevWorkspaces.selectedIndex)
             .also {
                 devSpacesContext.devWorkspace = it
+                println("Selected devworkspace: ${it.metadata.name}")
             }
-
+        println("Breakpoint 3.1")
         val loaderDialog =
             LoaderDialog(
                 DevSpacesBundle.message("connector.loader.devspaces.connecting.text"),
@@ -198,8 +222,11 @@ class DevSpacesRemoteServerConnectionStepView(private var devSpacesContext: DevS
 
         Thread {
             try {
+                println("Breakpoint 3.2")
                 DevSpacesConnection(devSpacesContext).connect(
                     {
+                        thisLogger().debug("Connecting: ${devSpacesContext.devWorkspace.metadata.name}")
+                        println("Breakpoint 3.3")
                         EventQueue.invokeLater { loaderDialog.hide() }
                         refreshDevWorkspace(
                             devSpacesContext.devWorkspace.metadata.namespace,

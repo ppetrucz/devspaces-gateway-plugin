@@ -32,28 +32,40 @@ class DevWorkspaces(private val client: ApiClient) {
     @Throws(ApiException::class)
     fun list(namespace: String): List<DevWorkspace> {
         val customApi = CustomObjectsApi(client)
-        val response = customApi.listNamespacedCustomObject(
-            "workspace.devfile.io",
-            "v1alpha2",
-            namespace,
-            "devworkspaces",
-            "false",
-            false,
-            "",
-            "",
-            "",
-            -1,
-            "",
-            "",
-            -1,
-            false
-        )
+        println("Breakpoint 2.1")
+        println("Namespace: $namespace")
+        try {
+            val response = customApi.listNamespacedCustomObject(
+                "workspace.devfile.io",
+                "v1alpha2",
+                namespace,
+                "devworkspaces",
+                "false",
+                false,
+                "",
+                "",
+                "",
+                -1,
+                "",
+                "",
+                -1,
+                false
+            )
 
-        val dwItems = Utils.getValue(response, arrayOf("items")) as List<*>
-        return dwItems
-            .stream()
-            .map { dwItem -> DevWorkspace.from(dwItem) }
-            .toList()
+            println("Breakpoint 2.2")
+
+            val dwItems = Utils.getValue(response, arrayOf("items")) as List<*>
+    
+            println("Breakpoint 2.3")
+    
+            return dwItems
+                .stream()
+                .map { dwItem -> DevWorkspace.from(dwItem) }
+                .toList()
+        } catch (e: Exception) {
+            println("Exception occurred when listing devworkspaces: ${e.message}")
+            return emptyList()
+        }
     }
 
     fun get(namespace: String, name: String): DevWorkspace {

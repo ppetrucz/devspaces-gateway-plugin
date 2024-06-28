@@ -29,14 +29,17 @@ class DevSpacesConnection(private val devSpacesContext: DevSpacesContext) {
         onDisconnected: () -> Unit,
         onDevWorkspaceStopped: () -> Unit,
     ): ThinClientHandle {
+        println("Breakpoint 4.1")
         if (devSpacesContext.isConnected)
             throw IOException(String.format("Already connected to %s", devSpacesContext.devWorkspace.metadata.name))
 
         devSpacesContext.isConnected = true
         try {
+            println("Breakpoint 4.2")
             return doConnection(onConnected, onDevWorkspaceStopped, onDisconnected)
         } catch (e: Exception) {
             devSpacesContext.isConnected = false
+            println("Error during connection: $e")
             throw e
         }
     }
@@ -49,9 +52,14 @@ class DevSpacesConnection(private val devSpacesContext: DevSpacesContext) {
         onDisconnected: () -> Unit
     ): ThinClientHandle {
         startAndWaitDevWorkspace()
+        println("Breakpoint 4.3")
 
-        val remoteServer = RemoteServer(devSpacesContext).also { it.waitProjectsReady() }
+        val remoteServer = RemoteServer(devSpacesContext).also {
+            it.waitProjectsReady()
+            println("Breakpoint 4.4")
+        }
         val projectStatus = remoteServer.getProjectStatus()
+        println("Breakpoint 4.5")
 
         val client = LinkedClientManager
             .getInstance()
@@ -61,24 +69,33 @@ class DevSpacesConnection(private val devSpacesContext: DevSpacesContext) {
                 "",
                 onConnected
             )
+        println("Breakpoint 4.6")
 
         val forwarder = Pods(devSpacesContext.client).forward(remoteServer.pod, 5990, 5990)
 
+        println("Breakpoint 4.7")
+
         client.run {
+            println("Breakpoint 4.8")
             lifetime.onTermination { forwarder.close() }
+            println("Breakpoint 4.9")
             lifetime.onTermination {
+                println("Breakpoint 4.10")
                 if (remoteServer.waitProjectsTerminated())
+                    println("Breakpoint 4.11")
                     DevWorkspaces(devSpacesContext.client)
                         .stop(
                             devSpacesContext.devWorkspace.metadata.namespace,
                             devSpacesContext.devWorkspace.metadata.name
                         )
                         .also { onDevWorkspaceStopped() }
+                println("Breakpoint 4.12")
             }
             lifetime.onTermination { devSpacesContext.isConnected = false }
+            println("Breakpoint 4.13")
             lifetime.onTermination(onDisconnected)
         }
-
+        println("Breakpoint 4.14")
         return client
     }
 

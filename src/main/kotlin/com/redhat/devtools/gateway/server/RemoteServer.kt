@@ -44,19 +44,31 @@ class RemoteServer(private val devSpacesContext: DevSpacesContext) {
                 arrayOf(
                     "/bin/sh",
                     "-c",
-                    "/idea-server/bin/remote-dev-server.sh status \$PROJECT_SOURCE | awk '/STATUS:/{p=1; next} p'"
+                    // Debug echo a desired output
+                    "echo {\"joinLink\":\"link\",\"httpLink\":\"link\",\"gatewayLink\":\"link\",\"appVersion\":\"link\",\"runtimeVersion\":\"link\",\"projects\":[link]}"
+                    // "/idea-server/bin/remote-dev-server.sh status \$PROJECT_SOURCE | awk '/STATUS:/{p=1; next} p'"
                 ),
                 container.name
             )
+            .also {
+                println("Result string: $it")
+            }
             .trim()
             .also {
-                return if (Strings.isNullOrEmpty(it)) ProjectStatus.empty()
-                else Gson().fromJson(it, ProjectStatus::class.java)
+                if (Strings.isNullOrEmpty(it)) {
+                    // println("Project status is empty")
+                    return ProjectStatus.empty()
+                } else {
+                    // println("Project status is not empty")
+                    // Gson().fromJson(it, ProjectStatus::class.java)
+                    return ProjectStatus.empty()
+                }
             }
     }
 
     @Throws(IOException::class)
     fun waitProjectsReady() {
+        println("Breakpoint 5.1")
         doWaitProjectsState(true, readyTimeout)
             .also {
                 if (!it) throw IOException(
@@ -66,6 +78,7 @@ class RemoteServer(private val devSpacesContext: DevSpacesContext) {
                     )
                 )
             }
+        println("Breakpoint 5.4")
     }
 
     @Throws(IOException::class)
@@ -75,13 +88,18 @@ class RemoteServer(private val devSpacesContext: DevSpacesContext) {
 
     @Throws(IOException::class)
     fun doWaitProjectsState(isReadyState: Boolean, timeout: Long): Boolean {
+        println("Breakpoint 5.2")
         val projectsInDesiredState = AtomicBoolean()
         val executor = Executors.newSingleThreadScheduledExecutor()
+        println("Breakpoint 5.3")
         executor.scheduleAtFixedRate(
             {
                 try {
                     getProjectStatus().also {
-                        if (isReadyState == !Arrays.isNullOrEmpty(it.projects)) {
+                        println("Project status: $it")
+                        println("Projects: ${it.projects}")
+                        // if (isReadyState == !Arrays.isNullOrEmpty(it.projects)) {
+                        if (true) {
                             projectsInDesiredState.set(true)
                             executor.shutdown()
                         }
