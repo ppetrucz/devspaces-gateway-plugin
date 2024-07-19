@@ -20,14 +20,20 @@ class OpenShiftClientFactory() {
     private val userName = "openshift_user"
     private val contextName = "openshift_context"
     private val clusterName = "openshift_cluster"
+    private val readTimeout = 60000 // 60 seconds
+    private val connectTimeout = 60000 // 60 seconds
 
     fun create(): ApiClient {
         return ClientBuilder.defaultClient()
+            .setReadTimeout(readTimeout)
+            .setConnectTimeout(connectTimeout)
     }
 
     fun create(server: String, token: CharArray): ApiClient {
         val kubeConfig = createKubeConfig(server, token)
         return Config.fromConfig(kubeConfig)
+            .setReadTimeout(readTimeout)
+            .setConnectTimeout(connectTimeout)
     }
 
     private fun createKubeConfig(server: String, token: CharArray): KubeConfig {

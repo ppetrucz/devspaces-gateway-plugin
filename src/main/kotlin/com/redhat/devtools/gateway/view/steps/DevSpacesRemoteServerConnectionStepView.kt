@@ -146,13 +146,9 @@ class DevSpacesRemoteServerConnectionStepView(private var devSpacesContext: DevS
                 (Utils.getValue(project, arrayOf("metadata", "name")) as String)
                     .also {
                         println("Getting devworkspaces in project: $it")
-                        println("Breakpoint 1.1")
                         val devWorkspacesObject = DevWorkspaces(devSpacesContext.client)
-                        println("Breakpoint 1.2")
                         val devWorkspacesInProject = devWorkspacesObject.list(it)
-                        println("Breakpoint 1.3")
                         devWorkspaces.addAll(devWorkspacesInProject)
-                        println("Breakpoint 1.4")
                         println("Found devworkspaces: " + devWorkspaces.size)
                         
                     }
@@ -212,7 +208,6 @@ class DevSpacesRemoteServerConnectionStepView(private var devSpacesContext: DevS
                 devSpacesContext.devWorkspace = it
                 println("Selected devworkspace: ${it.metadata.name}")
             }
-        println("Breakpoint 3.1")
         val loaderDialog =
             LoaderDialog(
                 DevSpacesBundle.message("connector.loader.devspaces.connecting.text"),
@@ -222,11 +217,9 @@ class DevSpacesRemoteServerConnectionStepView(private var devSpacesContext: DevS
 
         Thread {
             try {
-                println("Breakpoint 3.2")
                 DevSpacesConnection(devSpacesContext).connect(
                     {
                         thisLogger().debug("Connecting: ${devSpacesContext.devWorkspace.metadata.name}")
-                        println("Breakpoint 3.3")
                         EventQueue.invokeLater { loaderDialog.hide() }
                         refreshDevWorkspace(
                             devSpacesContext.devWorkspace.metadata.namespace,

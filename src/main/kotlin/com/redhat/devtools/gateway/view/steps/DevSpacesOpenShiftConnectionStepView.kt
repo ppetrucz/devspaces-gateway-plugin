@@ -29,6 +29,9 @@ import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.openapi.ApiException
 import io.kubernetes.client.openapi.auth.ApiKeyAuth
 import io.kubernetes.client.util.Config
+import java.util.logging.Logger
+
+private val logger = Logger.getLogger("DevSpacesOpenShiftConnectionStepView")
 
 class DevSpacesOpenShiftConnectionStepView(private var devSpacesContext: DevSpacesContext) : DevSpacesWizardStep {
     private var tfServer = JBTextField("")
@@ -79,16 +82,52 @@ class DevSpacesOpenShiftConnectionStepView(private var devSpacesContext: DevSpac
         try {
             Projects(client).list()
         } catch (e: Exception) {
-            var errorMsg = e.message.orEmpty()
+            logger.severe("Exception caught during connection test: ${e::class.simpleName}")
+            logger.severe("Exception message: ${e.message}")
+            
+            var errorMsg = e.message ?: "Unknown error"
             if (e is ApiException) {
-                val response = Gson().fromJson(e.responseBody, Map::class.java)
-                errorMsg = String.format("Reason: %s", String.format(response["message"] as String))
+                logger.severe("API Exception details:")
+                logger.severe("Response body: ${e.responseBody}")
+                logger.severe("Response code: ${e.code}")
+                
+                val response = try {
+                    logger.info("Attempting to parse response body as JSON")
+                    Gson().fromJson(e.responseBody, Map::class.java)
+                } catch (jsonException: Exception) {
+                    logger.severe("Failed to parse response body: ${jsonException.message}")
+                    null
+                }
+                
+                errorMsg = when {
+                    response != null -> {
+                        logger.info("Response parsed successfully")
+                        logger.info("Response content: $response")
+                        when {
+                            response["message"] is String -> {
+                                logger.info("Message found in response")
+                                String.format("Reason: %s", response["message"] as String)
+                            }
+                            else -> {
+                                logger.warning("No 'message' field found in response or it's not a String")
+                                "Error response doesn't contain expected 'message' field"
+                            }
+                        }
+                    }
+                    else -> {
+                        logger.warning("Failed to parse error response")
+                        "Failed to parse error response"
+                    }
+                }
             }
-
+    
+            logger.severe("Final error message: $errorMsg")
             InformationDialog("Connection failed", errorMsg, component).show()
             throw e
         }
     }
+    
+    
 
     private fun loadOpenShiftConnectionSettings() {
         // load from kubeconfig first
